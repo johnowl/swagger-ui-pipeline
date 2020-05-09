@@ -1,0 +1,32 @@
+stages:
+    - test
+    - build
+    - deploy
+    
+    test:
+      stage: test
+      image: ruby:alpine
+      tags:
+      - docker
+      script:
+      - echo "Checking Swagger YAML syntax for all .yaml files in folder"
+      - for i in $(find . -type f -name "*.yaml"); do echo "Checking file $i"; ruby -e "require 'yaml'; puts YAML.load_file('$i')" > /dev/null; done    
+    
+    pages:
+      stage: deploy
+      image: node:alpine
+      tags:
+      - docker
+      script:
+      - mkdir public
+      - cp swagger-ui-dist/* public/
+      - cp *.yaml public/
+      - cd public
+      - for i in $(find . -type f -name "*.yaml"); do cp index.html "${i/.yaml/.html}"; done      
+      - for i in $(find . -type f -name "*.html"); do sed -i "" "s#{{url}}#${i/.html/.yaml}#g" $i; done
+      - rm index.html
+     
+      artifacts:
+        paths:
+        - public
+    
